@@ -66,7 +66,7 @@ def button_check_cancellation_maintenance():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + row[df.columns[0]])
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
 
                 # Keyboard Entry -----------------------------------------------------------
                 gui.typewrite(str(row[df.columns[0]]))
@@ -102,7 +102,7 @@ def button_payment_manual_checks():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + row[df.columns[0]])
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
 
                 # Keyboard Entry -----------------------------------------------------------
                 gui.typewrite(row[df.columns[0]])
@@ -141,7 +141,7 @@ def button_un_payment_selection_manual():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + row[df.columns[0]])
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
 
                 # Keyboard Entry -----------------------------------------------------------
                 gui.typewrite(row[df.columns[0]])
@@ -179,7 +179,7 @@ def button_pmnt_maint():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + row[df.columns[0]])
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
 
                 # Keyboard Entry -----------------------------------------------------------
                 gui.typewrite(row[df.columns[0]])

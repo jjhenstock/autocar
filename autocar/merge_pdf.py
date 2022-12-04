@@ -1,8 +1,9 @@
-from PyPDF2 import PdfFileMerger
 import warnings
 import re
-import xlwings as xw
 from pathlib import Path
+
+from PyPDF2 import PdfFileMerger
+import xlwings as xw
 
 # Ignore warnings
 warnings.filterwarnings('ignore')
@@ -54,4 +55,4 @@ if __name__ == "__main__":
 
     # wb: xw.Book = xw.Book.caller()
     # ws_input: xw.Sheet = wb.sheets['Input']
-    main()
+    # main()

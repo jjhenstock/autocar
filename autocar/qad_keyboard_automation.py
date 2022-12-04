@@ -1,9 +1,10 @@
+from time import sleep
+import ctypes
+
 import xlwings as xw
 import pyautogui as gui
 import pandas as pd
-from time import sleep
 import keyboard
-import ctypes
 
 # pyautogui variable
 gui.FAILSAFE = True

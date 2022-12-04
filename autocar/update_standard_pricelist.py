@@ -1,6 +1,7 @@
-import pandas as pd
 from pathlib import Path
 import datetime
+
+import pandas as pd
 import pyperclip
 import xlwings as xw
 
@@ -10,8 +11,8 @@ wb: xw.Book = xw.Book.caller()
 ws_input: xw.Sheet = wb.sheets['Input']
 ws_settings: xw.Sheet = wb.sheets['Settings']
 
-server_path = ws_settings['c_std_path'].value
-pricelist_path = ws_settings['c_price_path'].value
+server_path = Path(ws_settings['c_std_path'].value)
+pricelist_path = Path(ws_settings['c_price_path'].value)
 
 
 def button_update_standard_pricelist():

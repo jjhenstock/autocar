@@ -66,13 +66,19 @@ def button_check_cancellation_maintenance():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
+                col_val0 = row[df.columns[0]]
+                col_val1 = row[df.columns[1]]
+
+                if isinstance(col_val0, float):
+                    col_val0 = int(col_val0)
+
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(col_val0))
 
                 # Keyboard Entry -----------------------------------------------------------
-                gui.typewrite(str(row[df.columns[0]]))
+                gui.typewrite(str(col_val0))
                 keyboard.press_and_release('enter')
                 sleep(sleep_time)
-                gui.typewrite(str(row[df.columns[1]]))
+                gui.typewrite(str(col_val1))
                 keyboard.press_and_release('enter')
                 sleep(sleep_time)
                 # Keyboard Entry -----------------------------------------------------------
@@ -102,10 +108,15 @@ def button_payment_manual_checks():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
+                col_val0 = row[df.columns[0]]
+
+                if isinstance(col_val0, float):
+                    col_val0 = int(col_val0)
+
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(col_val0))
 
                 # Keyboard Entry -----------------------------------------------------------
-                gui.typewrite(row[df.columns[0]])
+                gui.typewrite(str(col_val0))
                 keyboard.press_and_release('enter')
                 sleep(sleep_time)
                 keyboard.press_and_release('enter')
@@ -141,10 +152,15 @@ def button_un_payment_selection_manual():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
+                col_val0 = row[df.columns[0]]
+
+                if isinstance(col_val0, float):
+                    col_val0 = int(col_val0)
+
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(col_val0))
 
                 # Keyboard Entry -----------------------------------------------------------
-                gui.typewrite(row[df.columns[0]])
+                gui.typewrite(str(col_val0))
                 keyboard.press_and_release('enter')
                 sleep(sleep_time)
                 gui.typewrite('0')
@@ -179,10 +195,15 @@ def button_pmnt_maint():
 
             i = 1
             for _, row in df.iterrows():
-                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(row[df.columns[0]]))
+                col_val0 = row[df.columns[0]]
+
+                if isinstance(col_val0, float):
+                    col_val0 = int(col_val0)
+
+                print(str(i) + ' of ' + str(len(df.index)) + ' ' + df.columns[0] + ': ' + str(col_val0))
 
                 # Keyboard Entry -----------------------------------------------------------
-                gui.typewrite(row[df.columns[0]])
+                gui.typewrite(str(col_val0))
                 keyboard.press_and_release('enter')
                 sleep(sleep_time)
                 keyboard.press_and_release('enter')

@@ -17,6 +17,7 @@ ws_settings: xw.Sheet = wb.sheets['Settings']
 ws_pmnt_man_checks: xw.Sheet = wb.sheets['Payment Manual Checks']
 ws_un_pmnt_sel_man: xw.Sheet = wb.sheets['UN Payment Selection Manual']
 ws_pmnt_maint: xw.Sheet = wb.sheets['Payment Maintenance']
+ws_journal: xw.Sheet = wb.sheets['Journal']
 
 sleep_time = ws_settings['c_sleep_time'].value
 
@@ -218,6 +219,111 @@ def button_pmnt_maint():
 
                 i += 1
                 table_row += 1
+            xl_app.alert('Complete', title='Complete', mode='info')
+
+
+def button_journal():
+    gl_reference = str(ws_journal['c_gl_ref'].value).replace(' ', '')
+    eff_date = str(ws_journal['c_ef_date'].value)
+    control_tot = str(ws_journal['c_cont_tot'].value)
+
+    if _get_capslock_state() == 1:
+        xl_app.alert('Please turn off CAPSLOCK', title='Turn Off CAPSLOCK', mode='info')
+    else:
+        # Update sheet and table below
+        df: pd.DataFrame = ws_journal['t_journal[[#All]]'].options(pd.DataFrame, index=False).value
+        print(df, '\n')
+
+        msgbox_return = xl_app.alert('Are you ready to continue?', title='Ready', mode='info', buttons='yes_no')
+        if msgbox_return == 'yes':
+            # Update sheet below
+            _countdown(ws_journal, 'B4', 'C4', 'D4', 'E4', 'F4')
+
+            # Update if table is moved
+            table_row = 11
+            # Update sheet below
+            ws_journal['B' + str(table_row) + ':B' + str(table_row + len(df.index) - 1)].color = None
+
+            # Keyboard Entry -----------------------------------------------------------
+            gui.typewrite(gl_reference)
+            keyboard.press_and_release('enter')
+            sleep(sleep_time)
+            gui.typewrite(eff_date)
+            keyboard.press_and_release('enter')
+            sleep(sleep_time)
+            gui.typewrite(control_tot)
+            keyboard.press_and_release('enter')
+            sleep(sleep_time)
+            # Keyboard Entry -----------------------------------------------------------
+
+            i = 1
+            for _, row in df.iterrows():
+                account = str(row['Account'])
+                account = account.split('.', 1)[0]
+                sub_account = str(row['SubAccount'])
+                sub_account = sub_account.split('.', 1)[0]
+                cost_center = str(row['CostCenter'])
+                cost_center = cost_center.split('.', 1)[0]
+                entity = str(row['Entity'])
+                entity = entity.split('.', 1)[0]
+
+                description = str(row['Description'])
+                amount = str(row['Amount'])
+
+                if sub_account.lower() == 'nan' or sub_account.lower() == 'none' or sub_account is None:
+                    sub_account = ''
+
+                if cost_center.lower() == 'nan' or cost_center.lower() == 'none' or cost_center is None:
+                    cost_center = ''
+
+                if description.lower() == 'nan' or description.lower() == 'none' or description is None:
+                    description = ''
+
+                print(str(i) + ' of ' + str(len(df.index)))
+
+                # Keyboard Entry -----------------------------------------------------------
+                keyboard.press_and_release('enter')
+                sleep(sleep_time)
+                gui.typewrite(account)
+                keyboard.press_and_release('tab')
+                gui.typewrite(sub_account)
+                keyboard.press_and_release('tab')
+                gui.typewrite(cost_center)
+                keyboard.press_and_release('enter')
+                sleep(sleep_time)
+                gui.typewrite(entity)
+                keyboard.press_and_release('enter')
+                sleep(sleep_time)
+                if description == '':
+                    keyboard.press_and_release('enter')
+                    sleep(sleep_time)
+                else:
+                    gui.typewrite(description)
+                    keyboard.press_and_release('enter')
+                    sleep(sleep_time)
+                keyboard.press_and_release('enter')
+                sleep(sleep_time)
+                gui.typewrite(amount)
+                keyboard.press_and_release('enter')
+                sleep(sleep_time)
+                # Keyboard Entry -----------------------------------------------------------
+
+                # Update sheet below
+                ws_journal['B' + str(table_row)].color = '#92D050'
+
+                i += 1
+                table_row += 1
+
+            ws_journal['c_gl_ref'].value = ''
+            ws_journal['c_cont_tot'].value = ''
+            ws_journal['t_journal[Account]'].clear_contents()
+            ws_journal['t_journal[SubAccount]'].clear_contents()
+            ws_journal['t_journal[CostCenter]'].clear_contents()
+            ws_journal['t_journal[Entity]'].clear_contents()
+            ws_journal['t_journal[Debit]'].clear_contents()
+            ws_journal['t_journal[Credit]'].clear_contents()
+            ws_journal['t_journal[Description - Full]'].clear_contents()
+
             xl_app.alert('Complete', title='Complete', mode='info')
 
 

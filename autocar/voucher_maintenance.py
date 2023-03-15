@@ -16,6 +16,15 @@ shortpay_path = Path(ws_settings['c_shortpay_req'].value)
 vouch_maint_path = Path(ws_settings['c_vouchMaint'].value)
 
 
+def _ws_vouch_formulas():
+    ws_voucher_maint['t_vouchMaint[Supplier-Name]'].value = '=IF([@[Supplier-Nr]]="","",XLOOKUP([@[Supplier-Nr]],t_suppliers[Supplier],t_suppliers[Sort Name],"Invalid Supplier-Nr"))'
+    ws_voucher_maint['t_vouchMaint[Account-Description]'].value = '=IF([@Account]="","",XLOOKUP([@Account],t_accounts[Account],t_accounts[Description]))'
+    ws_voucher_maint['t_vouchMaint[Sub-Account-Description]'].value = '=IF([@[Sub-Account]]="","",XLOOKUP([@[Sub-Account]],t_subAcnt[Sub-Account],t_subAcnt[Description]))'
+    ws_voucher_maint['t_vouchMaint[Cost-Center-Description]'].value = '=IF([@[Cost-Center]]="","",XLOOKUP([@[Cost-Center]],t_costCenter[Cost-Center],t_costCenter[Description]))'
+    ws_voucher_maint['t_vouchMaint[Entity]'].value = '="2000"'
+    ws_voucher_maint['t_vouchMaint[Already-Vouchered]'].value = '=XLOOKUP([@Invoice],t_dataDetail[Invoice],t_dataDetail[Name],"")&"-"&TEXT(XLOOKUP([@Invoice],t_dataDetail[Invoice],t_dataDetail[Amount],""),"$#,##0.00")'
+
+
 def button_export(user_name: str = 'Unknown_User'):
     vouch_total = ws_voucher_maint['c_vouchTotal'].value
     df_vouch: pd.DataFrame = ws_voucher_maint['t_vouchMaint[[#All]]'].options(pd.DataFrame, index=False).value
@@ -80,6 +89,7 @@ def button_export(user_name: str = 'Unknown_User'):
         ws_voucher_maint['t_vouchMaint[Amount]'].clear_contents()
         lr_vouch_maint = str(ws_voucher_maint.range('C' + str(ws_voucher_maint.cells.last_cell.row)).end('up').row)
         ws_voucher_maint['7:' + lr_vouch_maint].delete()
+        _ws_vouch_formulas()
 
         xl_app.alert('Complete. File name: ' + file_name_csv, title='Complete', mode='info')
 

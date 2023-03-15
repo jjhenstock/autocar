@@ -49,6 +49,8 @@ def button_export(user_name: str = 'Unknown_User'):
         'Amount_1',
     ])
 
+    df_vouch_export['Date'] = df_vouch_export['Date'].dt.strftime('%m/%d/%y')
+
     dttime_now = datetime.datetime.now()
     file_date = dttime_now.strftime('%m%d%y%H%M')
     supplier_nr = str(df_vouch_export['Supplier'].iloc[0])
@@ -89,7 +91,9 @@ if __name__ == "__main__":
     # wb: xw.Book = xw.Book.caller()
     # ws_voucher_maint: xw.Sheet = wb.sheets['Voucher Maintenance']
     # ws_settings: xw.Sheet = wb.sheets['Settings']
+    # ws_summary: xw.Sheet = wb.sheets['Summary']
     # vouch_import_path = Path(ws_settings['c_vouch_import'].value)
     # shortpay_path = Path(ws_settings['c_shortpay_req'].value)
+    # vouch_maint_path = Path(ws_settings['c_vouchMaint'].value)
     # ------------------------------------------------------------------
     button_export()

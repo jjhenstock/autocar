@@ -1,9 +1,9 @@
-import xlwings as xw
 import sqlite3
-import pandas as pd
-import numpy as np
 from pathlib import Path
 import datetime
+import xlwings as xw
+import pandas as pd
+import numpy as np
 
 TEST_MODE = False
 
@@ -14,6 +14,7 @@ if TEST_MODE:
     server_path = this_path
 
 # Set workbook variables
+# ---------
 wb = xw.Book.caller()
 ws_pricelist = wb.sheets['Data_Pricelist']
 ws_inv_ent = wb.sheets['Individual Invoice Entry']
@@ -21,6 +22,7 @@ ws_msgbox = wb.sheets['Msgbox']
 ws_overview = wb.sheets['Overview']
 ws_import_link = wb.sheets['Import_Link']
 ws_recon = wb.sheets['Recon']
+# ---------
 
 
 def _sql_inv_ent(search_on, pack_or_po):
@@ -215,8 +217,10 @@ def _sql_import_link():
         """
         SELECT i.Invoice_Number AS Invoice, i.Purchase_Order AS "Order", i.Supplier_Nr AS Supplier,
             i.Invoice_Date AS Date, i.Receiver, i.Line, i.Qty_Shipped AS "Inv Qty",
-            i.Unit_Price_to_Pay AS "Curr Amt", i.Account AS Account_1, i.Cost_Center AS CC_1,
-            i.Account_Amount AS Amount_1, i.Number_of_Pages
+            i.Unit_Price_to_Pay AS "Curr Amt",
+            i.Account AS Account_1, i.Cost_Center AS CC_1,i.Account_Amount AS Amount_1,
+            i.Account2 AS Account_2, i.Cost_Center2 AS CC_2,i.Account_Amount2 AS Amount_2,
+            i.Number_of_Pages
             FROM t_Invoices_to_Import i
         """,
         conn
@@ -465,8 +469,8 @@ def _ws_inv_ent_formulas():
     ws_inv_ent['rng_l_inv_tot_rec'].value = '=IF(rng_inv_total="","Invoice Total",IF(rng_inv_tot_rec=rng_inv_total,"Invoice Total Reconciles","Invoice Total NOT Reconciling"))'
     ws_inv_ent['rng_l_inv_tot_to_pay'].value = '=IF(rng_inv_total="","Invoice Total",IF(rng_inv_tot_to_pay="Not Received","Not Received",' + \
         'IF(rng_inv_tot_rec=rng_inv_total,IF(rng_inv_tot_to_pay<rng_inv_tot_rec,"Short Pay","Invoice Total to Pay"),"")))'
-    ws_inv_ent['rng_inv_tot_rec'].value = '=ROUND(SUM(t_inv_ent[Extended_Price])+rng_ref_acnt_amnt,2)'
-    ws_inv_ent['rng_inv_tot_to_pay'].value = '=IF(COUNTBLANK(t_inv_ent[Receiver])>0,"Not Received",ROUND(SUM(t_inv_ent[Extended_Price_to_Pay])+rng_ref_acnt_amnt,2))'
+    ws_inv_ent['rng_inv_tot_rec'].value = '=ROUND(SUM(t_inv_ent[Extended_Price])+rng_ref_acnt_amnt+rng_ref_acnt_amnt2,2)'
+    ws_inv_ent['rng_inv_tot_to_pay'].value = '=IF(COUNTBLANK(t_inv_ent[Receiver])>0,"Not Received",ROUND(SUM(t_inv_ent[Extended_Price_to_Pay])+rng_ref_acnt_amnt+rng_ref_acnt_amnt2,2))'
 
 
 def button_submit_good():
@@ -476,8 +480,11 @@ def button_submit_good():
     inv_total = ws_inv_ent['rng_inv_total'].value
 
     acnt = ws_inv_ent['rng_ref_acnt'].value
+    acnt2 = ws_inv_ent['rng_ref_acnt2'].value
     cc = ws_inv_ent['rng_ref_cc'].value
+    cc2 = ws_inv_ent['rng_ref_cc2'].value
     acnt_amnt = ws_inv_ent['rng_ref_acnt_amnt'].value
+    acnt_amnt2 = ws_inv_ent['rng_ref_acnt_amnt2'].value
     nr_pages = ws_inv_ent['rng_nr_pages'].value
 
     conn = sqlite3.connect(this_path / 'ava.db')
@@ -486,12 +493,22 @@ def button_submit_good():
 
     # Account, Cost Centre, Amount
     df_inv_ent['Account'] = ''
+    df_inv_ent['Account2'] = ''
     df_inv_ent['Account'].iloc[0] = acnt
+    df_inv_ent['Account2'].iloc[0] = acnt2
+
     df_inv_ent['Cost_Center'] = ''
+    df_inv_ent['Cost_Center2'] = ''
     df_inv_ent['Cost_Center'].iloc[0] = cc
+    df_inv_ent['Cost_Center2'].iloc[0] = cc2
+
     df_inv_ent['Account_Amount'] = 0
+    df_inv_ent['Account_Amount2'] = 0
     if acnt_amnt != 0 and acnt_amnt is not None:
         df_inv_ent['Account_Amount'].iloc[0] = acnt_amnt
+    if acnt_amnt2 != 0 and acnt_amnt2 is not None:
+        df_inv_ent['Account_Amount2'].iloc[0] = acnt_amnt2
+
     df_inv_ent['Number_of_Pages'] = np.nan
     df_inv_ent['Number_of_Pages'].iloc[0] = nr_pages
 
@@ -508,7 +525,7 @@ def button_submit_good():
 
     # Calculations
     df_inv_ent['Receiver_Line'] = df_inv_ent['Receiver'].astype(str) + '-' + df_inv_ent['Line'].astype(str)
-    df_inv_ent['Invoice_Total'] = df_inv_ent['Extended_Price_to_Pay'] + df_inv_ent['Account_Amount'].fillna(0)
+    df_inv_ent['Invoice_Total'] = df_inv_ent['Extended_Price_to_Pay'] + df_inv_ent['Account_Amount'].fillna(0) + df_inv_ent['Account_Amount2'].fillna(0)
     df_inv_ent['Capture_Date'] = datetime.date.today().strftime('%m/%d/%y')
 
     # Calculate Qty_Open & Qty_Shipped minus Qty_Submitted_Shipped
@@ -522,15 +539,15 @@ def button_submit_good():
     df_inv_ent['Qty_Shipped'] = df_inv_ent['Qty_Shipped'] - df_inv_ent['Qty_Submitted_Shipped']
 
     # Drop unused columns
-    # TODO: drop Extended shortpay column below
     df_inv_ent.drop([' ', 'Qty_Submitted_Shipped'], 1, inplace=True)
 
     # Reorder columns
     df_inv_ent = df_inv_ent.reindex(columns=[
         'Invoice_Number', 'Supplier_Nr', 'Invoice_Date', 'Purchase_Order', 'Packslip', 'Entered_Invoice_Total',
         'Item_Number', 'Qty_Shipped', 'UOM', 'Invoice_Unit_Price', 'Extended_Price', 'Receiver', 'Line', 'Qty_Open', 'Receiver_Date',
-        'Unit_Price_to_Pay', 'Extended_Price_to_Pay', 'PO_Unit_Price', 'Pricelist_Unit_Price', 'Account', 'Cost_Center',
-        'Account_Amount', 'Number_of_Pages', 'Shortpay', 'Receiver_Line', 'Invoice_Total', 'Capture_Date'
+        'Unit_Price_to_Pay', 'Extended_Price_to_Pay', 'PO_Unit_Price', 'Pricelist_Unit_Price',
+        'Account', 'Cost_Center', 'Account_Amount', 'Account2', 'Cost_Center2', 'Account_Amount2',
+        'Number_of_Pages', 'Shortpay', 'Receiver_Line', 'Invoice_Total', 'Capture_Date'
     ])
 
     df_inv_ent.to_sql('t_Invoices_to_Import', conn, if_exists='append', index=False)
@@ -685,6 +702,7 @@ def button_import(user_name: str = 'Unknown_User'):
     # Round unit price and journal amount to pay to 9 digits
     df_import_link['Curr Amt'] = df_import_link['Curr Amt'].round(9)
     df_import_link['Amount_1'] = df_import_link['Amount_1'].round(9)
+    df_import_link['Amount_2'] = df_import_link['Amount_2'].round(9)
 
     df_import_link['Enty_1'] = '2000'
 
@@ -701,13 +719,9 @@ def button_import(user_name: str = 'Unknown_User'):
     # Add columns (not used)
     df_import_csv['Sub-Acct_1'] = ''
     df_import_csv['Project_1'] = ''
-    df_import_csv['Project_1'] = ''
-    df_import_csv['Account_2'] = ''
     df_import_csv['Sub-Acct_2'] = ''
-    df_import_csv['CC_2'] = ''
     df_import_csv['Project_2'] = ''
-    df_import_csv['Enty_2'] = ''
-    df_import_csv['Amount_2'] = ''
+    df_import_csv['Enty_2'] = '2000'
     df_import_csv['Account_3'] = ''
     df_import_csv['Sub-Acct_3'] = ''
     df_import_csv['CC_3'] = ''
@@ -765,9 +779,10 @@ def button_import(user_name: str = 'Unknown_User'):
     csv_filename = 'ava-' + user_name + '-' + file_date + '.csv'
 
     df_import_csv.to_csv(csv_location / csv_filename, index=False)
+
     ws_import_link.tables['t_import_link'].update(df_import_link)
 
-    ws_import_link['t_import_link[Extended_Amount]'].value = '=ROUND([@[Inv Qty]]*[@[Curr Amt]],2)+ROUND([@[Amount_1]],2)'
+    ws_import_link['t_import_link[Extended_Amount]'].value = '=ROUND([@[Inv Qty]]*[@[Curr Amt]],2)+ROUND([@[Amount_1]],2)+ROUND([@[Amount_2]],2)'
 
     ws_recon['B2'].value = csv_filename
 
@@ -780,82 +795,28 @@ def button_clear_captured():
 
 
 def button_finish_recon(user_name: str = 'Unknown_User', batch: str = 'Unknown_Batch'):
-    dttime_now = datetime.datetime.now()
-    file_date = dttime_now.strftime('%m-%d-%Y-%H-%M-%S')
-
-    df_import = _sql_get_invoices_to_import()
-
-    # Adjust df_import to match previous files
-    # Renamed columns Invoice Number
-    df_import.rename(columns={'Invoice_Number': 'Invoice Number'}, inplace=True)
-    # Renamed columns Supplier Nr
-    df_import.rename(columns={'Supplier_Nr': 'Supplier Nr'}, inplace=True)
-    # Renamed columns Invoice Date
-    df_import.rename(columns={'Invoice_Date': 'Invoice Date'}, inplace=True)
-    # Renamed columns PO Number
-    df_import.rename(columns={'Purchase_Order': 'PO Number'}, inplace=True)
-    # Renamed columns Pack Slip
-    df_import.rename(columns={'Packslip': 'Pack Slip'}, inplace=True)
-    # Renamed columns Entered Invoice Total
-    df_import.rename(columns={'Entered_Invoice_Total': 'Entered Invoice Total'}, inplace=True)
-    # Renamed columns Item Number
-    df_import.rename(columns={'Item_Number': 'Item Number'}, inplace=True)
-    # Renamed columns Qty Shipped
-    df_import.rename(columns={'Qty_Shipped': 'Qty Shipped'}, inplace=True)
-    # Renamed columns  Invoice Unit Price
-    df_import.rename(columns={'Invoice_Unit_Price': ' Invoice Unit Price '}, inplace=True)
-    # Renamed columns  Extended Price
-    df_import.rename(columns={'Extended_Price': ' Extended Price '}, inplace=True)
-    # Renamed columns  Receiver
-    df_import.rename(columns={'Receiver': ' Receiver '}, inplace=True)
-    # Renamed columns  Line
-    df_import.rename(columns={'Line': ' Line '}, inplace=True)
-    # Renamed columns  Qty Open
-    df_import.rename(columns={'Qty_Open': ' Qty Open '}, inplace=True)
-    # Renamed columns  Receiver Date
-    df_import.rename(columns={'Receiver_Date': ' Receiver Date '}, inplace=True)
-    # Renamed columns  Unit Price to Pay
-    df_import.rename(columns={'Unit_Price_to_Pay': ' Unit Price to Pay '}, inplace=True)
-    # Renamed columns  Extended Price to Pay
-    df_import.rename(columns={'Extended_Price_to_Pay': ' Extended Price to Pay '}, inplace=True)
-    # Renamed columns  PO Unit Price
-    df_import.rename(columns={'PO_Unit_Price': ' PO Unit Price '}, inplace=True)
-    # Renamed columns  Pricelist Unit Price
-    df_import.rename(columns={'Pricelist_Unit_Price': ' Pricelist Unit Price '}, inplace=True)
-    # Renamed columns  Account
-    df_import.rename(columns={'Account': ' Account '}, inplace=True)
-    # Renamed columns  Cost Center
-    df_import.rename(columns={'Cost_Center': ' Cost Center '}, inplace=True)
-    # Renamed columns  Account Amount
-    df_import.rename(columns={'Account_Amount': ' Account Amount '}, inplace=True)
-    # Renamed columns  Number of Pages
-    df_import.rename(columns={'Number_of_Pages': ' Number of Pages '}, inplace=True)
-    # Renamed columns  Shortpay
-    df_import.rename(columns={'Shortpay': ' Shortpay '}, inplace=True)
-    # Renamed columns  Receiver-Line
-    df_import.rename(columns={'Receiver_Line': ' Receiver-Line '}, inplace=True)
-    # Renamed columns  Invoice Total
-    df_import.rename(columns={'Invoice_Total': ' Invoice Total '}, inplace=True)
-    # Renamed columns Capture Date
-    df_import.rename(columns={'Capture_Date': 'Capture Date'}, inplace=True)
-    # Added column Qty_Less
-    df_import.insert(19, ' Qty_Less ', 0)
-    # Added column Qty Open Check
-    df_import.insert(28, ' Qty Open Check ', 0)
-
-    # Fix date formats
-    df_import['Invoice Date'] = df_import['Invoice Date'].str[5:7] + '/' + df_import['Invoice Date'].str[8:10] + '/' + df_import['Invoice Date'].str[2:4]
-    df_import[' Receiver Date '] = df_import[' Receiver Date '].str[5:7] + '/' + df_import[' Receiver Date '].str[8:10] + '/' + df_import[' Receiver Date '].str[2:4]
-    df_import[' Shortpay '] = df_import[' Shortpay '].map({0: 'FALSE', 1: 'TRUE'})
-
-    # Save CSV
     if TEST_MODE:
         csv_location = this_path
     else:
-        csv_location = Path(r'\\gvwac09\Public\Finance\AP Batch\Database\AVA')
+        csv_location = Path(r'\\gvwac09\Public\Finance\AVA\Database')
 
-    csv_filename = batch + '-' + user_name + '-' + file_date + '.csv'
-    df_import.to_csv(csv_location / csv_filename, index=False)
+    conn = sqlite3.connect(csv_location / 'Ava_All.db')
+
+    dttime_now = datetime.datetime.now()
+    file_date = dttime_now.strftime('%m/%d/%Y %H:%M:%S')
+
+    df_import = _sql_get_invoices_to_import()
+
+    df_import['User_Name'] = user_name
+    df_import['Batch'] = batch
+    df_import['File_Date'] = file_date
+
+    # Fix date formats
+    df_import['Invoice_Date'] = df_import['Invoice_Date'].str[5:7] + '/' + df_import['Invoice_Date'].str[8:10] + '/' + df_import['Invoice_Date'].str[2:4]
+    df_import['Receiver_Date'] = df_import['Receiver_Date'].str[5:7] + '/' + df_import['Receiver_Date'].str[8:10] + '/' + df_import['Receiver_Date'].str[2:4]
+
+    df_import.to_sql('t_Ava', conn, if_exists='append', index=False)
+    conn.close()
 
     # Backup and drop invoices to import
     _sql_backup_invoices_to_import()

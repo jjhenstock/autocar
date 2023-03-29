@@ -26,7 +26,6 @@ def _ws_vouch_formulas():
 
 
 def button_export(user_name: str = 'Unknown_User'):
-    vouch_total = ws_voucher_maint['c_vouchTotal'].value
     df_vouch: pd.DataFrame = ws_voucher_maint['t_vouchMaint[[#All]]'].options(pd.DataFrame, index=False).value
     df_vouch_export = df_vouch[[
         'Invoice',
@@ -58,6 +57,7 @@ def button_export(user_name: str = 'Unknown_User'):
         'Amount_1',
     ])
 
+    vouch_total = df_vouch_export['Amount_1'].sum()
     df_vouch_export['Date'] = df_vouch_export['Date'].dt.strftime('%m/%d/%y')
 
     dttime_now = datetime.datetime.now()

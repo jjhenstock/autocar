@@ -20,6 +20,7 @@ def button_process(str_path: str):
     files_not_opened = []
     files_to_move = []
     files_not_moved = []
+    files_old_format = []
     # Get unique identifier
     time_identifier = datetime.now().strftime('%m%d%y-%H%M%S')
     i_identifier = 1
@@ -48,11 +49,17 @@ def button_process(str_path: str):
         except Exception:
             files_not_moved.append(path)
 
+    for path in this_path.glob('*.xls'):
+        files_old_format.append(path)
+
     if files_not_opened:
-        xl_app.alert(''.join(map(str, files_not_opened)), title='Files not opened', mode='critical')
+        xl_app.alert(' '.join(map(str, files_not_opened)), title='Files not opened', mode='critical')
 
     if files_not_moved:
-        xl_app.alert(''.join(map(str, files_not_moved)), title='Files not moved', mode='critical')
+        xl_app.alert(' '.join(map(str, files_not_moved)), title='Files not moved', mode='critical')
+
+    if files_old_format:
+        xl_app.alert('Change the format of these files:\n' + ' '.join(map(str, files_old_format)), title='Old format', mode='critical')
 
     xl_app.alert('Complete.', title='Complete', mode='info')
 

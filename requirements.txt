@@ -7,3 +7,4 @@ PyAutoGUI
 PyPDF2
 pyperclip
 xlwings==0.30.6
+pyarrow
